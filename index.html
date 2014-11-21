@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/3.2.1/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/3.3.0/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.2.1/threadly-3.2.1.jar">threadly-3.2.1.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.3.0/threadly-3.3.0.jar">threadly-3.3.0.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -52,6 +52,7 @@
   <p>If you find this library useful, feel free to donate LTC/Litecoin to: LiTeCoinLRQrrP2B6xAq2aZ5WFHpHc28Ry</p>
   
   <p><h3>News:</h3>
+  <p>* November 21st - One of the more significant releases in a while.  Version 3.3.0 has something for everyone, performance improvements in the NoThreadScheduler and SingleThreadScheduler (hopefully in the future we can take the lessons learned here to improve the PriorityScheduler further), minor bug fixes around ExceptionUtils.makeRuntime, and the PrioritySchedulerStatisticTracker.  But probably most interesting is some facilities to help with a completely new idea on how to do work asynchronously.  Instead of having to submit everything to a scheduler, and require the overhead of releasing the thread, and then getting it again for another task.  In some cases it can be much more efficient to chain the tasks together using the ListenableFuture design.  This is facilitated by a couple new classes "ChainedRunnableListenableFuture" (which can ensure that in a thread safe way the task is executed on the scheduler, even if the future completes before time of adding the listener), and "ClearOnGetSettableListenableFuture" (which can prevent the waste of holding on to large results, when they are no longer needed).</p>
   <p>* November 4th - A patch release of 3.2.1 was released today.  This fixes some small issues (none of which were recent regressions).  Primarily around not getting low priority tasks returned from PriorityScheduler.shutdownNow().</p>
   <p>* October 28th - A minor release of version 3.2.0 today.  This includes some small changes, but worthy enough to get them out sooner than later.  These changes are primarily around the NoThreadScheduler, and being able to control how Exceptions are thrown from tasks inside it.  It also has some minor code cleanup, and better usage of Exceptions within the schedulers.</p>
   <p>* October 21st - Released version 3.1.0.  This has a nice expansion in features offering scheduleAtFixedRate (as a complement to scheduleWithFixedDelay).  It also includes some bug fixes, as well as new functionality to the Clock class to handle conditions where the system clock has changed.  Look at the releases page on github for more details: <a href="https://github.com/threadly/threadly/releases">https://github.com/threadly/threadly/releases</a>.</p>
