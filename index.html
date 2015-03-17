@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/3.4.0/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/3.5.0/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.4.1/threadly-3.4.1.jar">threadly-3.4.1.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.5.0/threadly-3.5.0.jar">threadly-3.5.0.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -52,6 +52,7 @@
   <p>If you find this library useful, feel free to donate LTC/Litecoin to: LiTeCoinLRQrrP2B6xAq2aZ5WFHpHc28Ry</p>
   
   <p><h3>News:</h3>
+  <p>* March 17th - Released version 3.5.0 of threadly.  This is our 30th released version, and with it we crossed the 1000 commit mark!  It's been a long road for this project, and I plan to keep it going.  This release offers some minor inclusions of new features (like SchedulingUtils for calculating the initial delay to an absolute time, or a given hour offset), as well as some bug fixes (like fixing issues where threads can be leaked if the thread pool is allowed to be garbage collected).  Unfortunately these changes increased the jar size from 208KB to around 216KB.  I have always wanted to keep this library small but as features have been added it has been growing.  Luckily you don't HAVE to use all the features, and the implementation for any given feature has always been kept lite and fast.</p>
   <p>* Febuary 6th - Released bug fix version 3.4.1.  The two bugs fixed were not recent regressions, but were trivial to fix, and release.  Check the releases page on github for more information.  The javadocs were not updated due to having no API changes, you can use the 3.4.0 javadocs for version 3.4.1.</p>
   <p>* January 29th - Release of version 3.4.0, this is a MAJOR release for threadly.  The reason this release has taken so long to get out is because it had higher risk associated with it.  This release includes almost a complete redo of how jobs are queued inside of PriorityScheduler.  This results in a 5 to 15% performance improvement (closer to 15% for simple executions, 5% for scheduled and recurring tasks).  The only new/added feature is the addition of "TesablePriorityScheduler" to assist in testing code which needs an implementation of the PrioritySchedulerInterface.  I encourage you to look at the change log for more detailed information, particularly around the deprecations of DynamicDelayQueue, DynamicDelayedUpdater, and ConsumerIterator.  I also removed the hosting of javadocs for version 0.8 and 0.9.  Both versions are over a year old now, but the javadocs can still be found on the <a href="https://github.com/threadly/threadly/releases">releases page on github</a>.</p>
   <p>* November 21st - One of the more significant releases in a while.  Version 3.3.0 has something for everyone, performance improvements in the NoThreadScheduler and SingleThreadScheduler (hopefully in the future we can take the lessons learned here to improve the PriorityScheduler further), minor bug fixes around ExceptionUtils.makeRuntime, and the PrioritySchedulerStatisticTracker.  But probably most interesting is some facilities to help with a completely new idea on how to do work asynchronously.  Instead of having to submit everything to a scheduler, and require the overhead of releasing the thread, and then getting it again for another task.  In some cases it can be much more efficient to chain the tasks together using the ListenableFuture design.  This is facilitated by a couple new classes "ChainedRunnableListenableFuture" (which can ensure that in a thread safe way the task is executed on the scheduler, even if the future completes before time of adding the listener), and "ClearOnGetSettableListenableFuture" (which can prevent the waste of holding on to large results, when they are no longer needed).</p>
