@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/3.7.0/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/3.8.0/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.7.0/threadly-3.7.0.jar">threadly-3.7.0.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/3.8.0/threadly-3.8.0.jar">threadly-3.8.0.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -51,6 +51,7 @@
   <p>If you find this library useful, feel free to donate LTC/Litecoin to: LiTeCoinLRQrrP2B6xAq2aZ5WFHpHc28Ry</p>
   
   <p><h3>News:</h3>
+  <p>* May 3rd - Released version 3.8.0.  I am mostly focused on 4.0.0 still, this release includes one more API depreciation which will occur with the 4.0.0 release (AbstractService moving to org.threadly.util).  There is one decent improvement in the Profiler for profiling at a high frequency when there is more than 4 or 5 threads in the JVM.</p>
   <p>* April 7th - I am focused on getting the 4.0.0 release ready.  I am now excited for this release because I think it provides much better logic in the PriorityScheduler around low vs high priority tasks.  Becuase of that today we are releasing version 3.7.0, this version has no functional changes but just indicates a few things in the PrioritySchedulerStatisticTracker that will no longer be supported in 4.0.</p>
   <p>* March 27th - Released version 3.6.0 which only includes API changes in the PriorityScheduler/PrioritySchedulerStatisticTracker.  I have been convinced that having a automatically sized thread pool does not make sense for this library (at least without provided stricter goals).  So this includes API changes so that a transition to 4.X will be easier.  In 4.X we will still allow you to change the pool size manually while running, but the pool will no longer have a concept of a core/max size, and instead will use set sizes (which again can be adjusted at runtime).  I am now convinced that dynamically sized pools are more likely to cause more harm than good, and if we were to create a dynamically sized pool it would need to be smarter and more application specific (feel free to post your ideas as github issues).</p>
   <p>* March 17th - Released version 3.5.0 of threadly.  This is our 30th released version, and with it we crossed the 1000 commit mark!  It's been a long road for this project, and I plan to keep it going.  This release offers some minor inclusions of new features (like SchedulingUtils for calculating the initial delay to an absolute time, or a given hour offset), as well as some bug fixes (like fixing issues where threads can be leaked if the thread pool is allowed to be garbage collected).  Unfortunately these changes increased the jar size from 208KB to around 216KB.  I have always wanted to keep this library small but as features have been added it has been growing.  Luckily you don't HAVE to use all the features, and the implementation for any given feature has always been kept lite and fast.</p>
