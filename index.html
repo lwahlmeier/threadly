@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/4.1.0/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/4.2.0/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.1.1/threadly-4.1.1.jar">threadly-4.1.1.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.2.0/threadly-4.2.0.jar">threadly-4.2.0.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -41,7 +41,7 @@
         <p>A library of java tools to assist with development of concurrent java applications.  This is designed to be a complement to java.util.concurrent and uses 
         java.util.concurrent to help assist in it's implementations where it makes sense.</p>
 
-        <p>These tools provide things ranging from the KeyDistributedExecutor which allows for threading to be controled, and portions of the application to be written 
+        <p>These tools provide things ranging from the KeyDistributedExecutor which allows for threading to be controlled, and portions of the application to be written 
         in a single threaded context.  To the unique priority based, high performance, thread pool.  To the ability to create a hierarchy of thready pools (sub pools 
         in threadly named "Limiters").  To the ability to control threading and allow things to easily run single threaded where it makes sense.  This library also 
         includes utilities for making it easier to unit test concurrent applications.  As well as utilities to help debug concurrent designs.</p>
@@ -51,9 +51,10 @@
   <p>If you find this library useful, feel free to donate LTC/Litecoin to: LiTeCoinLRQrrP2B6xAq2aZ5WFHpHc28Ry</p>
   
   <p><h3>News:</h3>
+  <p>* August 5th - Released version 4.2.0 today.  This version includes minor performance improvements to the PriorityScheduler and NoThreadScheduler.  There is also an expansion of the functionality in StringUtils.  The improvements in the PriorityScheduler are really quite cool.  It allowed me to remove an internal class, "ClockWrapper", which was used internally to deal with system clock advancements that may occur while trying to find the queue point for scheduled tasks.  While this problem is rarely noticed (which is probably why java.util.concurrent's pools just ignore it), it is one that threadly guarantees behavior around.  Previously ClockWrapper allowed us to control the clock advances in a thread local way to ensure that when we were finding the delays of items it was all against the same time value.  What I realized is that the interface of java.util.concurrent.Delayed forced you into a rather bad behavior to begin with (checking the system clock to find when to run).  So instead we now use absolute times when ever we compare two tasks to find the insertion point.  We only ask for the time delay to see if a task is ready to run (or how long to wait till it is ready).  This requires less system clock calls (which have to go to the kernel), less math, and we can still provide the stronger guarantees we always have.  This change also reduced the total size of the jar (and lines), despite the real size and improvements wont happen till 5.0.0 when the interfaces of ListUtils will change to be more generic, and less focused on Delayed.  I wanted to describe a bit more of the details behind this change because I feel like it's a perfect example of why Threadly continues to try and provide unique value, and give more than java.util.concurrent tries to provide.  It also shows how we are continuing to evolve, and improve the library.</p>
   <p>* July 6th - Released patch version 4.1.1.  This contains some minor improvements, primarily around some bug fixes in the RateLimiterExecutor.</p>
   <p>* June 5th - This release contains some new features and some bug fixes.  All the bugs fixed were in new features in 4.0.0, and not regressions of previous features (which is why I did not rush a 4.0.2 release).  Please check the <a href="https://github.com/threadly/threadly/releases">changelog</a> for a complete list of improvements and fixes.</p>
-  <p>* May 20th - I am sorry to inform despite all our testing we introduced a regression last night in our SettableListenableFuture.  That is now fixed and relased as version 4.0.1.</p>
+  <p>* May 20th - I am sorry to inform despite all our testing we introduced a regression last night in our SettableListenableFuture.  That is now fixed and released as version 4.0.1.</p>
   <p>* May 19th - A major release!  Today I released threadly 4.0.0.  This release has been a very long time coming.  I started focusing hard on 4.0.0 a bit over 2 months ago, and wanted to make sure this was a really good release.  This includes the normal cleanup we have on major releases.  But it also includes a significant feature expansion.  It includes some really important behavior changes around the PriorityScheduler.  There is to much to describe here, I <b>HIGHLY</b> recommend you to read the <a href="https://github.com/threadly/threadly/releases">releases page on github</a>.</p>
   <p>* May 3rd - Released version 3.8.0.  I am mostly focused on 4.0.0 still, this release includes one more API depreciation which will occur with the 4.0.0 release (AbstractService moving to org.threadly.util).  There is one decent improvement in the Profiler for profiling at a high frequency when there is more than 4 or 5 threads in the JVM.</p>
   <p>* April 7th - I am focused on getting the 4.0.0 release ready.  I am now excited for this release because I think it provides much better logic in the PriorityScheduler around low vs high priority tasks.  Becuase of that today we are releasing version 3.7.0, this version has no functional changes but just indicates a few things in the PrioritySchedulerStatisticTracker that will no longer be supported in 4.0.</p>
