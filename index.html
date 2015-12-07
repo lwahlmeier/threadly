@@ -33,7 +33,7 @@
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.4.0/threadly-4.4.0.jar">threadly-4.4.0.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.4.1/threadly-4.4.1.jar">threadly-4.4.1.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -49,6 +49,7 @@
   <p>To get a more complete overview of our features take a look at our <a href="https://github.com/threadly/threadly/wiki/Threadly-Features">features wiki page</a>.</p>
   
   <p><h3>News:</h3>
+  <p>* December 7th - Released a patch fix 4.4.1.  This fixes a small regression from 4.4.0 around scheduled tasks.  Under very specific conditions a scheduled task may be delayed longer than necessary for execution.  For more details I invite you to read the release change log here: <a href='https://github.com/threadly/threadly/releases/tag/release-4.4.1'>https://github.com/threadly/threadly/releases/tag/release-4.4.1</a></p>
   <p>* November 9th - Version 4.4.0 is out, and this has been a LONG time coming.  This release includes possibly the most significant performance improvements in PriorityScheduler possibly ever.  It has some significant thread safety complexities, and that is why it has been in development for about 6 months now.  We are slowly working on finding a way of publishing our benchmark results (though they can be run manually on your own hardware using the BenchmarkCollectionRunner in the <a href="https://github.com/threadly/threadly_benchmarks">threadly_benchmarks</a> project.  Till then you will have to just take my word that we are dramatically beating java.util in performance.  While that is the only major change, there have been some minor feature improvements as well.  Check releases on github for more information.</p>
   <p>* September 16th - Released version 4.3.0 of threadly.  This release includes many new features, and sadly some deprecations as we look forward to 5.0.0 (which is still a ways out).  Check the <a href='https://github.com/threadly/threadly/releases/tag/release-4.3.0'>changelog</a> for all the details, but here are some highlights.</p>
   <p>Added a third task priority "Starvable" which is for tasks that will only run when the pool has available resources and _nothing_ else wants to run.  Because of that these tasks can be starved.</p>
