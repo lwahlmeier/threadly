@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/4.6.0/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/4.6.1/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.0/threadly-4.6.0.jar">threadly-4.6.0.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.1/threadly-4.6.1.jar">threadly-4.6.1.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -49,6 +49,7 @@
   <p>To get a more complete overview of our features take a look at our <a href="https://github.com/threadly/threadly/wiki/Threadly-Features">features wiki page</a>.</p>
   
   <p><h3>News:</h3>
+  <p>* May 16th - Released API breaking patch release 4.6.1.  This is a special case in that it is a quick spelling correction in the new 'interceptor' functionality that was introduced in 4.6.0.  While we normally would never release an API breaking change till a major version, this is viewed more as a bug fix since it was introduced literally less than 24 hours ago.</p>
   <p>* May 15th - Released version 4.6.0.  This release primarily includes some package and class location changes around our scheduler wrappers.  This will be cleaned up in 5.0.0.  Besides that there were some minor internal code structure and performance improvements.  See the full release notes here: <a href="https://github.com/threadly/threadly/releases/tag/release-4.6.0">https://github.com/threadly/threadly/releases/tag/release-4.6.0</a>. </p>
   <p>* Febuary 22nd - Released version 4.5.0, this included quite a bit of new features.  I encourage you to look at the <a href='https://github.com/threadly/threadly/releases/tag/release-4.5.0'>full release notes</a> for deprecations and bug fixes included in this release.  For new features, the biggest is probably our new "UnfairExecutor".  This executor, while not being fully fair, is extremely fast.  The more cores, the more you have to gain from this executor.  It easily can achieve anywhere from 2x to 15x the performance of java.util.concurrent.ThreadPoolExecutor.  It is ideally suited as a backing thread pool for jetty, or anywhere where execution times are rather consistent, and task distrubitions can be evenly distributed.  The other major feature added in this release is an expansion to what we offer for statistics (new package and new API, the old PrioritySchedulerStatisticTracker has been deprecated and replaced).</p>
   <p>* December 15th - Released a patch fix 4.4.3.  This was not a regression, but rather an old issue where our ScheduledExecutorService wrappers were not following java.util.concurrent conventions when a future was canceled.  Threadly typically does not remove a task on a .cancel() for performance reasons, but instead just makes the task a no-op.  Because these java.util.concurrent pools return a Future on recurring tasks (which threadly does not normally do), we end up having a no-op task that keeps running.  This behavior was corrected, but not new.  I put this in a patch release to keep the changes incremental and small.  The increased patch release count in 4.4.X is not because of added instability, but just a slight shift in not having more major changes on the horizon.</p>
