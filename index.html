@@ -33,7 +33,7 @@
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.1/threadly-4.6.1.jar">threadly-4.6.1.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.2/threadly-4.6.2.jar">threadly-4.6.2.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -49,6 +49,7 @@
   <p>To get a more complete overview of our features take a look at our <a href="https://github.com/threadly/threadly/wiki/Threadly-Features">features wiki page</a>.</p>
   
   <p><h3>News:</h3>
+  <p>* May 18th - Released patch release 4.6.2.  This fixes an old issue introduced in 4.4.0.  The defect was specifically where an idle thread may fail to stop when PriorityScheduler is issued a shutdown or when the pool size is decreased.  It was a very tight race condition, and I don't expect many (if any) to hit it, but none the less it's fixed now!.  Since there was no javadocs changes in this release 4.6.1 is still the current javadoc reference.</p>
   <p>* May 16th - Released API breaking patch release 4.6.1.  This is a special case in that it is a quick spelling correction in the new 'interceptor' functionality that was introduced in 4.6.0.  While we normally would never release an API breaking change till a major version, this is viewed more as a bug fix since it was introduced literally less than 24 hours ago.</p>
   <p>* May 15th - Released version 4.6.0.  This release primarily includes some package and class location changes around our scheduler wrappers.  This will be cleaned up in 5.0.0.  Besides that there were some minor internal code structure and performance improvements.  See the full release notes here: <a href="https://github.com/threadly/threadly/releases/tag/release-4.6.0">https://github.com/threadly/threadly/releases/tag/release-4.6.0</a>. </p>
   <p>* Febuary 22nd - Released version 4.5.0, this included quite a bit of new features.  I encourage you to look at the <a href='https://github.com/threadly/threadly/releases/tag/release-4.5.0'>full release notes</a> for deprecations and bug fixes included in this release.  For new features, the biggest is probably our new "UnfairExecutor".  This executor, while not being fully fair, is extremely fast.  The more cores, the more you have to gain from this executor.  It easily can achieve anywhere from 2x to 15x the performance of java.util.concurrent.ThreadPoolExecutor.  It is ideally suited as a backing thread pool for jetty, or anywhere where execution times are rather consistent, and task distrubitions can be evenly distributed.  The other major feature added in this release is an expansion to what we offer for statistics (new package and new API, the old PrioritySchedulerStatisticTracker has been deprecated and replaced).</p>
