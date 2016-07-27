@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/4.6.1/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/4.6.3/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.2/threadly-4.6.2.jar">threadly-4.6.2.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.6.3/threadly-4.6.3.jar">threadly-4.6.3.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -49,6 +49,7 @@
   <p>To get a more complete overview of our features take a look at our <a href="https://github.com/threadly/threadly/wiki/Threadly-Features">features wiki page</a>.</p>
   
   <p><h3>News:</h3>
+  <p>* July 27th - Released patch version 4.6.3.  This does not really include any bug fixes, but rather some minor memory optimizations and the ability to dynamically adjust the rate of limiter pool wrappers.  Because of the feature expansion you could argue this should have been 4.7.0, but the changes were incredibly minor.  I just wanted to release this to a stable version to keep the release cycle consistent.</p>
   <p>* May 18th - Released patch release 4.6.2.  This fixes an old issue introduced in 4.4.0.  The defect was specifically where an idle thread may fail to stop when PriorityScheduler is issued a shutdown or when the pool size is decreased.  It was a very tight race condition, and I don't expect many (if any) to hit it, but none the less it's fixed now!.  Since there was no javadocs changes in this release 4.6.1 is still the current javadoc reference.</p>
   <p>* May 16th - Released API breaking patch release 4.6.1.  This is a special case in that it is a quick spelling correction in the new 'interceptor' functionality that was introduced in 4.6.0.  While we normally would never release an API breaking change till a major version, this is viewed more as a bug fix since it was introduced literally less than 24 hours ago.</p>
   <p>* May 15th - Released version 4.6.0.  This release primarily includes some package and class location changes around our scheduler wrappers.  This will be cleaned up in 5.0.0.  Besides that there were some minor internal code structure and performance improvements.  See the full release notes here: <a href="https://github.com/threadly/threadly/releases/tag/release-4.6.0">https://github.com/threadly/threadly/releases/tag/release-4.6.0</a>. </p>
