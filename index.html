@@ -27,13 +27,13 @@
           <li><a href="https://github.com/threadly/threadly/tarball/master">Download source <strong>TAR Ball</strong></a></li>
         </ul> -->
   <ul>
-  <li><a href="javadocs/4.8.0/index.html">Current stable <strong>Javadocs</strong></a></li>
+  <li><a href="javadocs/4.9.0/index.html">Current stable <strong>Javadocs</strong></a></li>
   <li><a href="https://github.com/threadly/threadly/wiki">View <strong>Wiki</strong></a></li>
   <li><a href="https://github.com/threadly/threadly">View On <strong>GitHub</strong></a></li>
   </ul>
 
   <p><h3>Latest stable binary: <br>
-  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.8.1/threadly-4.8.1.jar">threadly-4.8.1.jar</a></h3></p>
+  <a href="https://oss.sonatype.org/content/groups/staging/org/threadly/threadly/4.9.0/threadly-4.9.0.jar">threadly-4.9.0.jar</a></h3></p>
 
         <p><a href="https://threadly.ci.cloudbees.com/view/Threadly/job/threadly-master/"><img src="https://threadly.ci.cloudbees.com/job/threadly-master/badge/icon"></a></p>
       </header>
@@ -49,6 +49,7 @@
   <p>To get a more complete overview of our features take a look at our <a href="https://github.com/threadly/threadly/wiki/Threadly-Features">features wiki page</a>.</p>
   
   <p><h3>News:</h3>
+  <p>* January 12th - Released version 4.9.0.  This has some minor improvements, but has been sitting waiting to be released for some time now.  I am mostly looking towards 5.0.0, which is hopefully right around the corner!</p>
   <p>* October 14th - Released critical patch 4.8.1.  This fixes a defect introduced in 4.4.0 where under special circumstances with recurring tasks that the schedule queue may become incorrectly sorted such that recurring tasks may not execute again.  This should be a very rare and hard to hit condition, but is also one of the most critical defects ever discovered in threadly.  It is highly encouraged that everyone who uses recurring tasks updates their version immediately.</p>
   <p>* October 6th - Released version 4.8.0.  This release includes a feature expansion as well as number of deprecations leading up to the 5.0.0 release.  Some highlights are adding the ability for rate limiters to specify a maximum allowed delay.  Added `SuppressedStackRuntimeException` which is an exception type which does not generate a stack (for efficency).  The ability for limiters to have other handling besides throwing a `RejectedExecutionException`.  There are additional new features as well as class renames and deprecations, please see the <a href='https://github.com/threadly/threadly/releases/tag/release-4.8.0'>release notes</a> for all the details.</p>
   <p>* September 8th - Released patch version 4.7.2.  This patch includes performance improvements and behavior clarifications in FutureUtils.</p>
