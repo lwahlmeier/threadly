@@ -394,14 +394,14 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
      */
     public TaskWrapper getNextTask() {
       TaskWrapper schTask = scheduleQueue.peekFirst(); 
-      if(schTask != null && schTask.getScheduleDelay() <= 0) {
+      if(schTask != null && schTask.getRunTime() <= 0) {
         return schTask;
       }
       TaskWrapper execTask = executeQueue.poll();
       if(execTask != null) {
         return execTask;
       }
-      return null;
+      return schTask;
     }
   }
   
