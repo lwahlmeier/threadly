@@ -739,6 +739,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
              * now is to introduce locking.
              */
             // must get executeReference before time is checked
+
             short executeReference = nextTask.getExecuteReference();
             long taskDelay = nextTask.getScheduleDelay();
             if (taskDelay > 0) {
