@@ -209,7 +209,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       ShutdownRunnable sr = new ShutdownRunnable(workerPool);
       taskQueueManager.highPriorityQueueSet
                       .addExecute(new OneTimeTaskWrapper(sr, taskQueueManager.highPriorityQueueSet.executeQueue, 
-                                                         Clock.lastKnownForwardProgressingMillis()));
+                                                         Clock.lastKnownForwardProgressingMillis(), true));
     }
   }
 
@@ -273,12 +273,12 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
     if (delayInMillis == 0) {
       addToExecuteQueue(queueSet, 
                         (result = new OneTimeTaskWrapper(task, queueSet.executeQueue, 
-                                                         Clock.lastKnownForwardProgressingMillis())));
+                                                         Clock.lastKnownForwardProgressingMillis(), true)));
     } else {
       addToScheduleQueue(queueSet, 
                          (result = new OneTimeTaskWrapper(task, queueSet.scheduleQueue, 
                                                           Clock.accurateForwardProgressingMillis() + 
-                                                            delayInMillis)));
+                                                            delayInMillis, false)));
     }
     return result;
   }
@@ -497,7 +497,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       queueManager.starvablePriorityQueueSet
                   .addExecute(new OneTimeTaskWrapper(task, 
                                                      queueManager.starvablePriorityQueueSet.executeQueue, 
-                                                     Clock.lastKnownForwardProgressingMillis()));
+                                                     Clock.lastKnownForwardProgressingMillis(), true));
     }
 
     /**

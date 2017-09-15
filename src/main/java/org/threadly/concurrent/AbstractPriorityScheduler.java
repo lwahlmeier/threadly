@@ -333,16 +333,6 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
      * @return {@code true} if the task was found and removed
      */
     public boolean remove(Callable<?> task) {
-      {
-        Iterator<? extends TaskWrapper> it = executeQueue.iterator();
-        while (it.hasNext()) {
-          TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task) && executeQueue.remove(tw)) {
-            tw.invalidate();
-            return true;
-          }
-        }
-      }
       synchronized (scheduleQueue.getModificationLock()) {
         Iterator<? extends TaskWrapper> it = scheduleQueue.iterator();
         while (it.hasNext()) {
@@ -366,16 +356,6 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
      * @return {@code true} if the task was found and removed
      */
     public boolean remove(Runnable task) {
-      {
-        Iterator<? extends TaskWrapper> it = executeQueue.iterator();
-        while (it.hasNext()) {
-          TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task) && executeQueue.remove(tw)) {
-            tw.invalidate();
-            return true;
-          }
-        }
-      }
       synchronized (scheduleQueue.getModificationLock()) {
         Iterator<? extends TaskWrapper> it = scheduleQueue.iterator();
         while (it.hasNext()) {
@@ -447,21 +427,15 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
      * @return TaskWrapper which will be executed next, or {@code null} if there are no tasks
      */
     public TaskWrapper getNextTask() {
-      TaskWrapper scheduledTask = scheduleQueue.peekFirst();
-      TaskWrapper executeTask = executeQueue.peek();
-      if (executeTask != null) {
-        if (scheduledTask != null) {
-          if (scheduledTask.getRunTime() < executeTask.getRunTime()) {
-            return scheduledTask;
-          } else {
-            return executeTask;
-          }
-        } else {
-          return executeTask;
-        }
-      } else {
-        return scheduledTask;
+      TaskWrapper schTask = scheduleQueue.peekFirst(); 
+      if(schTask != null && schTask.getScheduleDelay() <= 0) {
+        return schTask;
       }
+      TaskWrapper execTask = executeQueue.poll();
+      if(execTask != null) {
+        return execTask;
+      }
+      return null;
     }
   }
   
@@ -710,12 +684,13 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
   protected static class OneTimeTaskWrapper extends TaskWrapper {
     protected final Queue<? extends TaskWrapper> taskQueue;
     protected final long runTime;
+    protected final boolean exec;
     // optimization to avoid queue traversal on failure to remove, cheaper than AtomicBoolean
     private volatile boolean executed;
     
-    protected OneTimeTaskWrapper(Runnable task, Queue<? extends TaskWrapper> taskQueue, long runTime) {
+    protected OneTimeTaskWrapper(Runnable task, Queue<? extends TaskWrapper> taskQueue, long runTime, boolean exec) {
       super(task);
-      
+      this.exec = exec;
       this.taskQueue = taskQueue;
       this.runTime = runTime;
       this.executed = false;
@@ -746,6 +721,9 @@ public abstract class AbstractPriorityScheduler extends AbstractSubmitterSchedul
 
     @Override
     public boolean canExecute(short ignoredExecuteReference) {
+      if(exec) {
+        return true;
+      }
       if (! executed && 
           (executed = true) && // set executed as soon as possible, before removal attempt
           taskQueue.remove(this)) { // every task is wrapped in a unique wrapper, so we can remove 'this' safely

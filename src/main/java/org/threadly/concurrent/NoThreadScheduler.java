@@ -250,10 +250,10 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
     OneTimeTaskWrapper result;
     if (delayInMillis == 0) {
       queueSet.addExecute((result = new NoThreadOneTimeTaskWrapper(task, queueSet.executeQueue, 
-                                                                   nowInMillis(false))));
+                                                                   nowInMillis(false), true)));
     } else {
       queueSet.addScheduled((result = new NoThreadOneTimeTaskWrapper(task, queueSet.scheduleQueue, 
-                                                                     nowInMillis(true) + delayInMillis)));
+                                                                     nowInMillis(true) + delayInMillis, false)));
     }
     return result;
   }
@@ -408,8 +408,8 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
    */
   protected class NoThreadOneTimeTaskWrapper extends OneTimeTaskWrapper {
     protected NoThreadOneTimeTaskWrapper(Runnable task, 
-                                         Queue<? extends TaskWrapper> taskQueue, long runTime) {
-      super(task, taskQueue, runTime);
+                                         Queue<? extends TaskWrapper> taskQueue, long runTime, boolean exec) {
+      super(task, taskQueue, runTime, exec);
     }
     
     @Override
