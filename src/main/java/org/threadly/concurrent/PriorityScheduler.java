@@ -272,7 +272,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       result = new TaskWrapper(task, priority);
       taskQueueManager.addTask(result);
     } else {
-      result = new TaskWrapper(task, priority, delayInMillis);
+      result = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+delayInMillis);
       taskQueueManager.addTask(result);
     }
     return result;
@@ -287,7 +287,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
     if (priority == null) {
       priority = defaultPriority;
     }
-    taskQueueManager.addTask(new TaskWrapper(task, priority, initialDelay, recurringDelay, false));
+    taskQueueManager.addTask(new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, recurringDelay, false));
   }
 
   @Override
@@ -300,7 +300,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       priority = defaultPriority;
     }
 
-    taskQueueManager.addTask(new TaskWrapper(task, priority, initialDelay, period, true));
+    taskQueueManager.addTask(new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, period, true));
   }
   
   /**

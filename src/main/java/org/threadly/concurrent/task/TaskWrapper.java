@@ -13,7 +13,6 @@ import org.threadly.util.ExceptionUtils;
 public class TaskWrapper implements RunnableContainer {
   private final Runnable task;
   private final boolean isFixedRate;
-  private final long runDelay;
   private final long reRunDelay;
   private final TaskPriority priority;
   private volatile long nextRunTime;
@@ -22,20 +21,19 @@ public class TaskWrapper implements RunnableContainer {
   private volatile short executeFlipCounter = 0;
   
   public TaskWrapper(Runnable task, TaskPriority priority) {
-    this(task, priority, -1L, -1L, false);
+    this(task, priority, Clock.lastKnownForwardProgressingMillis(), -1L, false);
   }
   
-  public TaskWrapper(Runnable task, TaskPriority priority, long runDelay) {
-    this(task, priority, runDelay, -1L, false);
+  public TaskWrapper(Runnable task, TaskPriority priority, long startTime) {
+    this(task, priority, startTime, -1L, false);
   }
   
-  public TaskWrapper(Runnable task, TaskPriority priority, long runDelay, long reRunDelay, boolean isFixedRate) {
+  public TaskWrapper(Runnable task, TaskPriority priority, long startTime, long reRunDelay, boolean isFixedRate) {
     this.task = task;
-    this.runDelay = runDelay;
     this.reRunDelay = reRunDelay;
     this.isFixedRate = isFixedRate;
     this.priority = priority;
-    nextRunTime = Clock.accurateForwardProgressingMillis() + runDelay;
+    nextRunTime = startTime;
     invalidated = false;
 //    System.out.println("Task:"+runDelay+":"+reRunDelay+":"+nextRunTime);
   }
@@ -86,10 +84,6 @@ public class TaskWrapper implements RunnableContainer {
   
   public TaskPriority getPriority() {
     return this.priority;
-  }
-  
-  public long initalRunDelay() {
-    return this.runDelay;
   }
   
   public boolean isRecurring() {

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -17,6 +18,7 @@ import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.ArgumentVerifier;
 import org.threadly.util.Clock;
 import org.threadly.util.SortUtils;
+
 
 /**
  * Abstract implementation for implementations of {@link PrioritySchedulerService}.  In general 
@@ -262,7 +264,7 @@ implements PrioritySchedulerService {
     }
     
     public void addTask(TaskWrapper task) {
-      if(task.initalRunDelay() <=0 ) {
+      if(Clock.lastKnownForwardProgressingMillis() - task.getPureRunTime() <= 0) {
         addExecute(task);
       } else {
         addScheduled(task);
@@ -397,27 +399,27 @@ implements PrioritySchedulerService {
     private static void clearQueue(Collection<? extends TaskWrapper> queue, 
                                    List<TaskWrapper> resultList) {
       boolean resultWasEmpty = resultList.isEmpty();
-//      Iterator<? extends TaskWrapper> it = queue.iterator();
-//      
-//      while (it.hasNext()) {
-//        TaskWrapper tw = it.next();
-//        // no need to cancel and return tasks which are already canceled
-//        if (! (tw.task instanceof Future) || ! ((Future<?>)tw.task).isCancelled()) {
-//          tw.invalidate();
-//          // don't return tasks which were used only for internal behavior management
-//          if (! (tw.task instanceof InternalRunnable)) {
-//            if (resultWasEmpty) {
-//              resultList.add(tw);
-//            } else {
-//              resultList.add(SortUtils.getInsertionEndIndex((index) -> 
-//              resultList.get(index).getRunTime(), 
-//              resultList.size() - 1, 
-//              tw.getRunTime(), true), 
-//                             tw);
-//            }
-//          }
-//        }
-//      }
+      Iterator<? extends TaskWrapper> it = queue.iterator();
+      
+      while (it.hasNext()) {
+        TaskWrapper tw = it.next();
+        // no need to cancel and return tasks which are already canceled
+        if (! (tw.getContainedRunnable() instanceof Future) || ! ((Future<?>)tw.getContainedRunnable()).isCancelled()) {
+          tw.invalidate();
+          // don't return tasks which were used only for internal behavior management
+          if (! (tw.getContainedRunnable() instanceof InternalRunnable)) {
+            if (resultWasEmpty) {
+              resultList.add(tw);
+            } else {
+              resultList.add(SortUtils.getInsertionEndIndex((index) -> 
+              resultList.get(index).getRunTime(), 
+              resultList.size() - 1, 
+              tw.getRunTime(), true), 
+                             tw);
+            }
+          }
+        }
+      }
       queue.clear();
     }
     

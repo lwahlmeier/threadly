@@ -47,7 +47,7 @@ public class ThreadlyInternalAccessor {
   public static Delayed doScheduleAtFixedRateAndGetDelayed(PriorityScheduler pScheduler, 
                                                            Runnable task, TaskPriority priority, 
                                                            long initialDelay, long periodInMillis) {
-    TaskWrapper rrtw = new TaskWrapper(task, priority, initialDelay, periodInMillis, true);
+    TaskWrapper rrtw = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, periodInMillis, true);
     pScheduler.taskQueueManager.addTask(rrtw);
     return new DelayedTaskWrapper(rrtw);
   }
@@ -66,7 +66,7 @@ public class ThreadlyInternalAccessor {
   public static Delayed doScheduleWithFixedDelayAndGetDelayed(PriorityScheduler pScheduler, 
                                                               Runnable task, TaskPriority priority, 
                                                               long initialDelay, long delayInMs) {
-    TaskWrapper rdtw = new TaskWrapper(task, priority, initialDelay, delayInMs, false);
+    TaskWrapper rdtw = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, delayInMs, false);
     pScheduler.taskQueueManager.addTask(rdtw);
     return new DelayedTaskWrapper(rdtw);
   }
@@ -87,7 +87,7 @@ public class ThreadlyInternalAccessor {
                                                            long initialDelay, long periodInMillis) {
     NoThreadScheduler nts = scheduler.getRunningScheduler();
 
-    TaskWrapper rdtw = new TaskWrapper(task, priority, initialDelay, periodInMillis, true);
+    TaskWrapper rdtw = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, periodInMillis, true);
     nts.getQueueManager().addTask(rdtw);
     return new DelayedTaskWrapper(rdtw);
   }
@@ -109,7 +109,7 @@ public class ThreadlyInternalAccessor {
     
     NoThreadScheduler nts = scheduler.getRunningScheduler();
 
-    TaskWrapper rdtw = new TaskWrapper(task, priority, initialDelay, delayInMs, false);
+    TaskWrapper rdtw = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, delayInMs, false);
     nts.getQueueManager().addTask(rdtw);
     return new DelayedTaskWrapper(rdtw);
   }

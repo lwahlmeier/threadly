@@ -249,7 +249,7 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
       result = new TaskWrapper(task,priority);
       queueManager.addTask(result);
     } else {
-      result = new TaskWrapper(task,priority, delayInMillis);
+      result = new TaskWrapper(task,priority, Clock.accurateForwardProgressingMillis()+delayInMillis);
       queueManager.addTask(result);
     }
     return result;
@@ -265,7 +265,7 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
       priority = defaultPriority;
     }
     
-    TaskWrapper taskWrapper = new TaskWrapper(task, priority, initialDelay, recurringDelay, false);
+    TaskWrapper taskWrapper = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, recurringDelay, false);
     queueManager.addTask(taskWrapper);
 
   }
@@ -282,7 +282,7 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
     
     QueueSet queueSet = queueManager.getQueueSet(priority);
     
-    TaskWrapper taskWrapper = new TaskWrapper(task, priority, initialDelay, period, true);
+    TaskWrapper taskWrapper = new TaskWrapper(task, priority, Clock.accurateForwardProgressingMillis()+initialDelay, period, true);
     queueManager.addTask(taskWrapper);
   }
 
