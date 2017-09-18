@@ -4,19 +4,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
-import org.threadly.concurrent.collections.ArrayOfLinkedQueues;
 import org.threadly.concurrent.collections.ConcurrentArrayList;
 import org.threadly.concurrent.future.ListenableFuture;
 import org.threadly.concurrent.future.ListenableFutureTask;
 import org.threadly.concurrent.future.ListenableRunnableFuture;
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.ArgumentVerifier;
 import org.threadly.util.Clock;
-import org.threadly.util.ExceptionUtils;
 import org.threadly.util.SortUtils;
 
 /**
@@ -84,8 +83,9 @@ implements PrioritySchedulerService {
    * @param priority Priority for task execution
    * @return Wrapper that was scheduled
    */
-  protected abstract OneTimeTaskWrapper doSchedule(Runnable task, 
-                                                   long delayInMillis, TaskPriority priority);
+  protected abstract TaskWrapper doSchedule(Runnable task, 
+                                                   long delayInMillis, 
+                                                   TaskPriority priority);
   
   @Override
   public void execute(Runnable task, TaskPriority priority) {
@@ -248,7 +248,7 @@ implements PrioritySchedulerService {
    */
   protected static class QueueSet {
     protected final QueueSetListener queueListener;
-    protected final ArrayOfLinkedQueues<TaskWrapper> executeQueue;
+    protected final ConcurrentLinkedQueue<TaskWrapper> executeQueue;
     protected final ConcurrentArrayList<TaskWrapper> scheduleQueue;
     protected final Function<Integer, Long> scheduleQueueRunTimeByIndex;
     protected volatile long lastPulled = Clock.accurateForwardProgressingMillis();
@@ -256,9 +256,17 @@ implements PrioritySchedulerService {
     
     public QueueSet(QueueSetListener queueListener) {
       this.queueListener = queueListener;
-      this.executeQueue = new ArrayOfLinkedQueues<>(4);
+      this.executeQueue = new ConcurrentLinkedQueue<>();
       this.scheduleQueue = new ConcurrentArrayList<>(QUEUE_FRONT_PADDING, QUEUE_REAR_PADDING);
       scheduleQueueRunTimeByIndex = (index) -> scheduleQueue.get(index).getRunTime();
+    }
+    
+    public void addTask(TaskWrapper task) {
+      if(task.initalRunDelay() <=0 ) {
+        addExecute(task);
+      } else {
+        addScheduled(task);
+      }
     }
     
     public boolean isEmpty() {
@@ -275,7 +283,7 @@ implements PrioritySchedulerService {
      * 
      * @param task Task to add to end of execute queue
      */
-    public void addExecute(OneTimeTaskWrapper task) {
+    public void addExecute(TaskWrapper task) {
       executeQueue.add(task);
       
       queueListener.handleQueueUpdate();
@@ -313,7 +321,7 @@ implements PrioritySchedulerService {
         Iterator<? extends TaskWrapper> it = executeQueue.iterator();
         while (it.hasNext()) {
           TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task) && executeQueue.remove(tw)) {
+          if (ContainerHelper.isContained(tw.getContainedRunnable(), task) && executeQueue.remove(tw)) {
             tw.invalidate();
             return true;
           }
@@ -323,7 +331,7 @@ implements PrioritySchedulerService {
         Iterator<? extends TaskWrapper> it = scheduleQueue.iterator();
         while (it.hasNext()) {
           TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task)) {
+          if (ContainerHelper.isContained(tw.getContainedRunnable(), task)) {
             tw.invalidate();
             it.remove();
             
@@ -346,7 +354,7 @@ implements PrioritySchedulerService {
         Iterator<? extends TaskWrapper> it = executeQueue.iterator();
         while (it.hasNext()) {
           TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task) && executeQueue.remove(tw)) {
+          if (ContainerHelper.isContained(tw.getContainedRunnable(), task) && executeQueue.remove(tw)) {
             tw.invalidate();
             return true;
           }
@@ -356,7 +364,7 @@ implements PrioritySchedulerService {
         Iterator<? extends TaskWrapper> it = scheduleQueue.iterator();
         while (it.hasNext()) {
           TaskWrapper tw = it.next();
-          if (ContainerHelper.isContained(tw.task, task)) {
+          if (ContainerHelper.isContained(tw.getContainedRunnable(), task)) {
             tw.invalidate();
             it.remove();
             
@@ -427,10 +435,7 @@ implements PrioritySchedulerService {
       TaskWrapper schTask = null;
       if(!scheduleQueue.isEmpty() && !checkingScheduled.get() && checkingScheduled.compareAndSet(false, true)) {
         while((schTask = scheduleQueue.peekFirst()) != null && schTask.getScheduleDelay() <= 0) {
-          if(schTask.canExecute(schTask.getExecuteReference())) {
-            scheduleQueue.remove(schTask);
-            executeQueue.add(schTask);
-          }
+          executeQueue.add(scheduleQueue.poll());
         }
         checkingScheduled.set(false);
       }
@@ -462,6 +467,20 @@ implements PrioritySchedulerService {
       
       // call to verify and set values
       setMaxWaitForLowPriority(maxWaitForLowPriorityInMs);
+    }
+    
+    public void addTask(TaskWrapper task) {
+      switch(task.getPriority()) {
+        case High:
+          highPriorityQueueSet.addTask(task);
+          return;
+        case Low:
+          highPriorityQueueSet.addTask(task);
+          return;
+        case Starvable:
+          highPriorityQueueSet.addTask(task);
+          return;
+      }
     }
     
     /**
@@ -582,341 +601,6 @@ implements PrioritySchedulerService {
      */
     public long getMaxWaitForLowPriority() {
       return maxWaitForLowPriorityInMs;
-    }
-  }
-  
-  /**
-   * Abstract implementation for all tasks handled by this pool.
-   * 
-   * @since 1.0.0
-   */
-  protected abstract static class TaskWrapper implements RunnableContainer {
-    protected final Runnable task;
-    protected volatile boolean invalidated;
-    
-    public TaskWrapper(Runnable task) {
-      this.task = task;
-      invalidated = false;
-    }
-    
-    /**
-     * Similar to {@link Runnable#run()}, this is invoked to execute the contained task.  One 
-     * critical difference is this implementation should never throw an exception (even 
-     * {@link RuntimeException}'s).  Throwing such an exception would result in the worker thread 
-     * dying (and being leaked from the pool).
-     */
-    public abstract void runTask();
-    
-    /**
-     * Attempts to invalidate the task from running (assuming it has not started yet).  If the 
-     * task is recurring then future executions will also be avoided.
-     */
-    public void invalidate() {
-      invalidated = true;
-    }
-    
-    /**
-     * Get an execution reference so that we can ensure thread safe access into 
-     * {@link #canExecute(short)}.
-     * 
-     * @return Short to identify execution state 
-     */
-    public abstract short getExecuteReference();
-    
-    /**
-     * Called as the task is being removed from the queue to prepare for execution.  The reference 
-     * provided here should be captured from {@link #getExecuteReference()}.
-     * 
-     * @param executeReference Reference checked to ensure thread safe task execution
-     * @return true if the task should be executed
-     */
-    public abstract boolean canExecute(short executeReference);
-    
-    /**
-     * Get the absolute time when this should run, in comparison with the time returned from 
-     * {@link org.threadly.util.Clock#accurateForwardProgressingMillis()}.
-     * 
-     * @return Absolute time in millis this task should run
-     */
-    public abstract long getRunTime();
-    
-    /**
-     * Simple getter for the run time, this is expected to do NO operations for calculating the 
-     * run time.  The main reason this is used over {@link #getRunTime()} is to allow the JVM to 
-     * jit the function better.  Because of the nature of this, this can only be used at very 
-     * specific points in the tasks lifecycle, and can not be used for sorting operations.
-     * 
-     * @return An un-molested representation of the stored absolute run time
-     */
-    public abstract long getPureRunTime();
-    
-    /**
-     * Call to see how long the task should be delayed before execution.  While this may return 
-     * either positive or negative numbers, only an accurate number is returned if the task must 
-     * be delayed for execution.  If the task is ready to execute it may return zero even though 
-     * it is past due.  For that reason you can NOT use this to compare two tasks for execution 
-     * order, instead you should use {@link #getRunTime()}.
-     * 
-     * @return delay in milliseconds till task can be run
-     */
-    public long getScheduleDelay() {
-      if (getRunTime() > Clock.lastKnownForwardProgressingMillis()) {
-        return getRunTime() - Clock.accurateForwardProgressingMillis();
-      } else {
-        return 0;
-      }
-    }
-    
-    @Override
-    public String toString() {
-      return task.toString();
-    }
-    
-    @Override
-    public Runnable getContainedRunnable() {
-      return task;
-    }
-  }
-  
-  /**
-   * Wrapper for tasks which only executes once.
-   * 
-   * @since 1.0.0
-   */
-  protected static class OneTimeTaskWrapper extends TaskWrapper {
-    protected final Queue<? extends TaskWrapper> taskQueue;
-    protected final long runTime;
-    protected final boolean exec;
-    // optimization to avoid queue traversal on failure to remove, cheaper than AtomicBoolean
-    private volatile boolean executed;
-    
-    protected OneTimeTaskWrapper(Runnable task, Queue<? extends TaskWrapper> taskQueue, long runTime, boolean exec) {
-      super(task);
-      this.exec = true;
-      this.taskQueue = taskQueue;
-      this.runTime = runTime;
-      this.executed = false;
-    }
-    
-    @Override
-    public long getPureRunTime() {
-      return runTime;
-    }
-    
-    @Override
-    public long getRunTime() {
-      return runTime;
-    }
-    
-    @Override
-    public void runTask() {
-      if (! invalidated) {
-        ExceptionUtils.runRunnable(task);
-      }
-    }
-    
-    @Override
-    public short getExecuteReference() {
-      // we ignore the reference since one time tasks are deterministically removed from the queue
-      return 0;
-    }
-    
-    @Override
-    public boolean canExecute(short ignoredExecuteReference) {
-      if(exec) {
-        return true;
-      }
-      if (! executed && 
-          (executed = true) & // set executed as soon as possible, before removal attempt
-          taskQueue.remove(this)) { // every task is wrapped in a unique wrapper, so we can remove 'this' safely
-        return true;
-      } else {
-        return false;
-      }
-    }
-  }
-  
-  /**
-   * Abstract wrapper for any tasks which run repeatedly.
-   * 
-   * @since 3.1.0
-   */
-  protected abstract static class RecurringTaskWrapper extends TaskWrapper {
-    protected final QueueSet queueSet;
-    protected volatile boolean executing;
-    protected long nextRunTime;
-    // executeFlipCounter is used to prevent multiple executions when consumed concurrently
-    // only changed when queue is locked...overflow is fine
-    private volatile short executeFlipCounter;
-    
-    protected RecurringTaskWrapper(Runnable task, QueueSet queueSet, long firstRunTime) {
-      super(task);
-      
-      this.queueSet = queueSet;
-      executing = false;
-      this.nextRunTime = firstRunTime;
-      executeFlipCounter = 0;
-    }
-    
-    @Override
-    public long getPureRunTime() {
-      return nextRunTime;
-    }
-    
-    @Override
-    public long getRunTime() {
-      if (executing) {
-        return Long.MAX_VALUE;
-      } else {
-        return nextRunTime;
-      }
-    }
-    
-    @Override
-    public long getScheduleDelay() {
-      if (executing) {
-        // this would only be likely if two threads were trying to run the same task
-        return Long.MAX_VALUE;
-      } else if (nextRunTime > Clock.lastKnownForwardProgressingMillis()) {
-        return nextRunTime - Clock.accurateForwardProgressingMillis();
-      } else {
-        return 0;
-      }
-    }
-    
-    @Override
-    public short getExecuteReference() {
-      return executeFlipCounter;
-    }
-    
-    @Override
-    public boolean canExecute(short executeReference) {
-      if (executing | executeFlipCounter != executeReference) {
-        return false;
-      }
-      synchronized (queueSet.scheduleQueue.getModificationLock()) {
-        if (executing | executeFlipCounter != executeReference) {
-          // this task is already running, or not ready to run, so ignore
-          return false;
-        } else {
-          /* we have to reposition to the end atomically so that this task can be removed if 
-           * requested to be removed.  We can put it at the end because we know this task wont 
-           * run again till it has finished (which it will be inserted at the correct point in 
-           * queue then.
-           */
-          int sourceIndex = queueSet.scheduleQueue.indexOf(this);
-          if (sourceIndex >= 0) {
-            if (sourceIndex < queueSet.scheduleQueue.size() - 1 && 
-                queueSet.scheduleQueue.get(sourceIndex + 1).getRunTime() != Long.MAX_VALUE) {
-              queueSet.scheduleQueue.reposition(sourceIndex, queueSet.scheduleQueue.size());
-            }
-            executing = true;
-            executeFlipCounter++;
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
-    }
-    
-    /**
-     * Call to find and reposition a scheduled task.  It is expected that the task provided has 
-     * already been added to the queue.  This call will use 
-     * {@link RecurringTaskWrapper#getRunTime()} to figure out what the new position within the 
-     * queue should be.
-     */
-    protected void reschedule() {
-      int insertionIndex = -1;
-      synchronized (queueSet.scheduleQueue.getModificationLock()) {
-        int currentIndex = queueSet.scheduleQueue.lastIndexOf(this);
-        if (currentIndex > 0) {
-          insertionIndex = SortUtils.getInsertionEndIndex(queueSet.scheduleQueueRunTimeByIndex, 
-                                                          queueSet.scheduleQueue.size() - 1, 
-                                                          nextRunTime, true);
-          
-          queueSet.scheduleQueue.reposition(currentIndex, insertionIndex);
-        } else if (currentIndex == 0) {
-          insertionIndex = 0;
-        } else {
-          // task removed, no-op, but might as well tidy up the state even though nothing cares
-        }
-        
-        // we can only update executing AFTER the reposition has finished
-        // The synchronization lock must be held during this because changing executing
-        // changes the scheduled delay, and thus we can not have other threads examining the task queue
-        executing = false;
-        executeFlipCounter++;  // increment again to indicate execute state change
-      }
-      
-      // kind of awkward we need to know here, but we we need to let the queue set know if the head changed
-      if (insertionIndex == 0) {
-        queueSet.queueListener.handleQueueUpdate();
-      }
-    }
-    
-    /**
-     * Called when the implementing class should update the variable {@code nextRunTime} to be the 
-     * next absolute time in milliseconds the task should run.
-     */
-    protected abstract void updateNextRunTime();
-    
-    @Override
-    public void runTask() {
-      if (invalidated) {
-        return;
-      }
-      
-      // no need for try/finally due to ExceptionUtils usage
-      ExceptionUtils.runRunnable(task);
-      
-      if (! invalidated) {
-        updateNextRunTime();
-        // now that nextRunTime has been set, resort the queue (ask reschedule)
-        reschedule();  // this will set executing to false atomically with the resort
-      }
-    }
-  }
-  
-  /**
-   * Container for tasks which run with a fixed delay after the previous run.
-   * 
-   * @since 3.1.0
-   */
-  protected static class RecurringDelayTaskWrapper extends RecurringTaskWrapper {
-    protected final long recurringDelay;
-    
-    protected RecurringDelayTaskWrapper(Runnable task, QueueSet queueSet, 
-                                        long firstRunTime, long recurringDelay) {
-      super(task, queueSet, firstRunTime);
-      
-      this.recurringDelay = recurringDelay;
-    }
-    
-    @Override
-    protected void updateNextRunTime() {
-      nextRunTime = Clock.accurateForwardProgressingMillis() + recurringDelay;
-    }
-  }
-  
-  /**
-   * Wrapper for tasks which run at a fixed period (regardless of execution time).
-   * 
-   * @since 3.1.0
-   */
-  protected static class RecurringRateTaskWrapper extends RecurringTaskWrapper {
-    protected final long period;
-    
-    protected RecurringRateTaskWrapper(Runnable task, QueueSet queueSet, 
-                                       long firstRunTime, long period) {
-      super(task, queueSet, firstRunTime);
-      
-      this.period = period;
-    }
-    
-    @Override
-    protected void updateNextRunTime() {
-      nextRunTime += period;
     }
   }
   

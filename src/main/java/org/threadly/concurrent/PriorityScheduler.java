@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.AbstractService;
 import org.threadly.util.ArgumentVerifier;
 import org.threadly.util.Clock;
@@ -207,9 +208,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
   public void shutdown() {
     if (workerPool.startShutdown()) {
       ShutdownRunnable sr = new ShutdownRunnable(workerPool);
-      taskQueueManager.highPriorityQueueSet
-                      .addExecute(new OneTimeTaskWrapper(sr, taskQueueManager.highPriorityQueueSet.executeQueue, 
-                                                         Clock.lastKnownForwardProgressingMillis(), true));
+      taskQueueManager.addTask(new TaskWrapper(sr, TaskPriority.High));
     }
   }
 
@@ -267,18 +266,14 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
   }
 
   @Override
-  protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
-    QueueSet queueSet = taskQueueManager.getQueueSet(priority);
-    OneTimeTaskWrapper result;
+  protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+    TaskWrapper result;
     if (delayInMillis == 0) {
-      addToExecuteQueue(queueSet, 
-                        (result = new OneTimeTaskWrapper(task, queueSet.executeQueue, 
-                                                         Clock.lastKnownForwardProgressingMillis(), true)));
+      result = new TaskWrapper(task, priority);
+      taskQueueManager.addTask(result);
     } else {
-      addToScheduleQueue(queueSet, 
-                         (result = new OneTimeTaskWrapper(task, queueSet.scheduleQueue, 
-                                                          Clock.accurateForwardProgressingMillis() + 
-                                                            delayInMillis, false)));
+      result = new TaskWrapper(task, priority, delayInMillis);
+      taskQueueManager.addTask(result);
     }
     return result;
   }
@@ -292,13 +287,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
     if (priority == null) {
       priority = defaultPriority;
     }
-
-    QueueSet queueSet = taskQueueManager.getQueueSet(priority);
-    addToScheduleQueue(queueSet, 
-                       new RecurringDelayTaskWrapper(task, queueSet, 
-                                                     Clock.accurateForwardProgressingMillis() + 
-                                                       initialDelay, 
-                                                     recurringDelay));
+    taskQueueManager.addTask(new TaskWrapper(task, priority, initialDelay, recurringDelay, false));
   }
 
   @Override
@@ -311,11 +300,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       priority = defaultPriority;
     }
 
-    QueueSet queueSet = taskQueueManager.getQueueSet(priority);
-    addToScheduleQueue(queueSet, 
-                       new RecurringRateTaskWrapper(task, queueSet, 
-                                                    Clock.accurateForwardProgressingMillis() + initialDelay, 
-                                                    period));
+    taskQueueManager.addTask(new TaskWrapper(task, priority, initialDelay, period, true));
   }
   
   /**
@@ -326,7 +311,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
    * 
    * @param task {@link TaskWrapper} to queue for the scheduler
    */
-  protected void addToExecuteQueue(QueueSet queueSet, OneTimeTaskWrapper task) {
+  protected void addToExecuteQueue(QueueSet queueSet, TaskWrapper task) {
     if (workerPool.isShutdownStarted()) {
       throw new RejectedExecutionException("Thread pool shutdown");
     }
@@ -428,12 +413,11 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
           // must be InternalRunnable, and not DoNothingRunnable so it's hidden from the task queue
         }
       };
-      queueManager.starvablePriorityQueueSet
-                  .scheduleQueue.add(new RecurringRateTaskWrapper(doNothingRunnable, 
-                                                                  queueManager.starvablePriorityQueueSet, 
-                                                                  Clock.lastKnownForwardProgressingMillis() + 
-                                                                    Integer.MAX_VALUE, 
-                                                                  Integer.MAX_VALUE));
+      queueManager.addTask(new TaskWrapper(doNothingRunnable,
+                                           TaskPriority.Starvable, 
+                                           Integer.MAX_VALUE, 
+                                           Integer.MAX_VALUE, 
+                                           false));
     }
 
     /**
@@ -495,9 +479,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
       // add to starvable queue, since we only need these tasks to be consumed and ran when there 
       // is nothing else to run.
       queueManager.starvablePriorityQueueSet
-                  .addExecute(new OneTimeTaskWrapper(task, 
-                                                     queueManager.starvablePriorityQueueSet.executeQueue, 
-                                                     Clock.lastKnownForwardProgressingMillis(), true));
+                  .addExecute(new TaskWrapper(task,TaskPriority.Starvable));
     }
 
     /**
@@ -739,8 +721,6 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
              * now is to introduce locking.
              */
             // must get executeReference before time is checked
-
-            short executeReference = nextTask.getExecuteReference();
             long taskDelay = nextTask.getScheduleDelay();
             if (taskDelay > 0) {
               if (taskDelay == Long.MAX_VALUE) {
@@ -767,7 +747,7 @@ public class PriorityScheduler extends AbstractPriorityScheduler {
                 addWorkerToIdleChain(worker);
                 queued = true;
               }
-            } else if (nextTask.canExecute(executeReference)) {
+            } else {
               return nextTask;
             }
           }

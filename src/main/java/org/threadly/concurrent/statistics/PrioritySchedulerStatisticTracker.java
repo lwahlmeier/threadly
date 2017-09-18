@@ -12,6 +12,7 @@ import org.threadly.concurrent.PriorityScheduler;
 import org.threadly.concurrent.TaskPriority;
 import org.threadly.concurrent.collections.ConcurrentArrayList;
 import org.threadly.concurrent.statistics.PriorityStatisticManager.TaskStatWrapper;
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.Clock;
 import org.threadly.util.Pair;
 
@@ -378,7 +379,7 @@ public class PrioritySchedulerStatisticTracker extends PriorityScheduler
   }
 
   @Override
-  protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+  protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
     return super.doSchedule(new TaskStatWrapper(statsManager, priority, task), 
                             delayInMillis, priority);
   }

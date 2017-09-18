@@ -5,6 +5,7 @@ import java.util.List;
 import org.threadly.concurrent.AbstractPriorityScheduler;
 import org.threadly.concurrent.NoThreadScheduler;
 import org.threadly.concurrent.TaskPriority;
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.Clock;
 import org.threadly.util.ExceptionHandler;
 
@@ -69,7 +70,7 @@ public class TestableScheduler extends AbstractPriorityScheduler {
   }
 
   @Override
-  protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+  protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
     return scheduler.doSchedule(task, delayInMillis, priority);
   }
 
@@ -282,7 +283,7 @@ public class TestableScheduler extends AbstractPriorityScheduler {
     }
     
     @Override
-    protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+    protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
       return super.doSchedule(task, delayInMillis, priority);
     }
   }

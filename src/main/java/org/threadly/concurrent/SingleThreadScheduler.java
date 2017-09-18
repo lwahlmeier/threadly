@@ -6,6 +6,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.ArgumentVerifier;
 import org.threadly.util.ExceptionUtils;
 
@@ -227,7 +228,7 @@ public class SingleThreadScheduler extends AbstractPriorityScheduler {
   }
 
   @Override
-  protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+  protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
     return getRunningScheduler().doSchedule(task, delayInMillis, priority);
   }
 

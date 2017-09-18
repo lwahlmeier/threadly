@@ -1,10 +1,10 @@
 package org.threadly.concurrent;
 
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.util.ArgumentVerifier;
 import org.threadly.util.Clock;
 import org.threadly.util.ExceptionHandler;
@@ -141,7 +141,6 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
       while ((nextTask = getNextReadyTask()) != null && ! tickCanceled) {
         // call will remove task from queue, or reposition as necessary
         // we can cheat with the execution reference since task de-queue is single threaded
-        if (nextTask.canExecute(nextTask.getExecuteReference())) {
           try {
             nextTask.runTask();
           } catch (Throwable t) {
@@ -153,7 +152,6 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
           }
           
           tasks++;
-        }
       }
       
       if ((tasks != 0 || resetCancelTickIfNoTasksRan) && tickCanceled) {
@@ -245,15 +243,14 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
   }
 
   @Override
-  protected OneTimeTaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
-    QueueSet queueSet = queueManager.getQueueSet(priority);
-    OneTimeTaskWrapper result;
+  protected TaskWrapper doSchedule(Runnable task, long delayInMillis, TaskPriority priority) {
+    TaskWrapper result;
     if (delayInMillis == 0) {
-      queueSet.addExecute((result = new NoThreadOneTimeTaskWrapper(task, queueSet.executeQueue, 
-                                                                   nowInMillis(false), true)));
+      result = new TaskWrapper(task,priority);
+      queueManager.addTask(result);
     } else {
-      queueSet.addScheduled((result = new NoThreadOneTimeTaskWrapper(task, queueSet.scheduleQueue, 
-                                                                     nowInMillis(true) + delayInMillis, false)));
+      result = new TaskWrapper(task,priority, delayInMillis);
+      queueManager.addTask(result);
     }
     return result;
   }
@@ -268,11 +265,9 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
       priority = defaultPriority;
     }
     
-    QueueSet queueSet = queueManager.getQueueSet(priority);
-    NoThreadRecurringDelayTaskWrapper taskWrapper = 
-        new NoThreadRecurringDelayTaskWrapper(task, queueSet, 
-                                              nowInMillis(true) + initialDelay, recurringDelay);
-    queueSet.addScheduled(taskWrapper);
+    TaskWrapper taskWrapper = new TaskWrapper(task, priority, initialDelay, recurringDelay, false);
+    queueManager.addTask(taskWrapper);
+
   }
 
   @Override
@@ -287,10 +282,8 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
     
     QueueSet queueSet = queueManager.getQueueSet(priority);
     
-    NoThreadRecurringRateTaskWrapper taskWrapper = 
-        new NoThreadRecurringRateTaskWrapper(task, queueSet, 
-                                             nowInMillis(true) + initialDelay, period);
-    queueSet.addScheduled(taskWrapper);
+    TaskWrapper taskWrapper = new TaskWrapper(task, priority, initialDelay, period, true);
+    queueManager.addTask(taskWrapper);
   }
 
   @Override
@@ -399,121 +392,5 @@ public class NoThreadScheduler extends AbstractPriorityScheduler {
   @Override
   protected QueueManager getQueueManager() {
     return queueManager;
-  }
-  
-  /**
-   * Wrapper for tasks which only executes once.
-   * 
-   * @since 1.0.0
-   */
-  protected class NoThreadOneTimeTaskWrapper extends OneTimeTaskWrapper {
-    protected NoThreadOneTimeTaskWrapper(Runnable task, 
-                                         Queue<? extends TaskWrapper> taskQueue, long runTime, boolean exec) {
-      super(task, taskQueue, runTime, exec);
-    }
-    
-    @Override
-    public long getScheduleDelay() {
-      if (getRunTime() > nowInMillis(false)) {
-        return getRunTime() - nowInMillis(true);
-      } else {
-        return 0;
-      }
-    }
-
-    @Override
-    public void runTask() {
-      if (! invalidated) {
-        // Do not use ExceptionUtils to run task, so that exceptions can be handled in .tick()
-        task.run();
-      }
-    }
-  }
-
-  /**
-   * Abstract wrapper for any tasks which run repeatedly.
-   * 
-   * @since 4.3.0
-   */
-  protected abstract class NoThreadRecurringTaskWrapper extends RecurringTaskWrapper {
-    protected NoThreadRecurringTaskWrapper(Runnable task, QueueSet queueSet, long firstRunTime) {
-      super(task, queueSet, firstRunTime);
-    }
-    
-    @Override
-    public long getScheduleDelay() {
-      if (getRunTime() > nowInMillis(false)) {
-        return getRunTime() - nowInMillis(true);
-      } else {
-        return 0;
-      }
-    }
-    
-    /**
-     * Called when the implementing class should update the variable {@code nextRunTime} to be the 
-     * next absolute time in milliseconds the task should run.
-     */
-    @Override
-    protected abstract void updateNextRunTime();
-
-    @Override
-    public void runTask() {
-      if (invalidated) {
-        return;
-      }
-      
-      try {
-        // Do not use ExceptionUtils to run task, so that exceptions can be handled in .tick()
-        task.run();
-      } finally {
-        if (! invalidated) {
-          updateNextRunTime();
-          // now that nextRunTime has been set, resort the queue (ask reschedule)
-          reschedule();  // this will set executing to false atomically with the resort
-        }
-      }
-    }
-  }
-  
-  /**
-   * Container for tasks which run with a fixed delay after the previous run.
-   * 
-   * @since 4.3.0
-   */
-  protected class NoThreadRecurringDelayTaskWrapper extends NoThreadRecurringTaskWrapper {
-    protected final long recurringDelay;
-    
-    protected NoThreadRecurringDelayTaskWrapper(Runnable task, QueueSet queueSet, 
-                                                long firstRunTime, long recurringDelay) {
-      super(task, queueSet, firstRunTime);
-      
-      this.recurringDelay = recurringDelay;
-    }
-    
-    @Override
-    protected void updateNextRunTime() {
-      nextRunTime = nowInMillis(true) + recurringDelay;
-    }
-  }
-  
-  /**
-   * Wrapper for tasks which run at a fixed period (regardless of execution time).
-   * 
-   * @since 4.3.0
-   */
-  protected class NoThreadRecurringRateTaskWrapper extends NoThreadRecurringTaskWrapper {
-    protected final long period;
-    
-    protected NoThreadRecurringRateTaskWrapper(Runnable task, QueueSet queueSet, 
-                                               long firstRunTime, long period) {
-      super(task, queueSet, firstRunTime);
-      
-      this.period = period;
-    }
-    
-    @Override
-    protected void updateNextRunTime() {
-      nextRunTime += period;
-    }
   }
 }

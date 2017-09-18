@@ -11,11 +11,11 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.threadly.concurrent.AbstractPriorityScheduler.OneTimeTaskWrapper;
 import org.threadly.concurrent.AbstractPriorityScheduler.QueueSet;
 import org.threadly.concurrent.AbstractPriorityScheduler.QueueSetListener;
-import org.threadly.concurrent.AbstractPriorityScheduler.TaskWrapper;
 import org.threadly.concurrent.future.ListenableFutureTask;
+import org.threadly.concurrent.task.OneTimeTaskWrapper;
+import org.threadly.concurrent.task.TaskWrapper;
 import org.threadly.test.concurrent.TestRunnable;
 import org.threadly.util.Clock;
 
